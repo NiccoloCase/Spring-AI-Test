@@ -1,4 +1,4 @@
-package org.nc.springaitest;
+package org.nc.springaitest.controllers;
 import org.nc.springaitest.dto.IELTSEvaluation;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;

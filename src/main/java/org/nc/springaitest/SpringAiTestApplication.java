@@ -1,7 +1,10 @@
 package org.nc.springaitest;
 
+import org.nc.springaitest.services.CsvIeltsTask2Loader;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class SpringAiTestApplication {
@@ -10,4 +13,16 @@ public class SpringAiTestApplication {
         SpringApplication.run(SpringAiTestApplication.class, args);
     }
 
+    @Bean
+    CommandLineRunner loadData(CsvIeltsTask2Loader csvIeltsTask2Loader) {
+        return args -> {
+            try {
+                csvIeltsTask2Loader.loadCsvEssays();
+                System.out.println("✅ IELTS essay data loaded successfully");
+            } catch (Exception e) {
+                System.err.println("❌ Failed to load IELTS essay data: " + e.getMessage());
+                e.printStackTrace();
+            }
+        };
+    }
 }
