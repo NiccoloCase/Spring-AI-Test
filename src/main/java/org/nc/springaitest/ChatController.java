@@ -1,14 +1,10 @@
 package org.nc.springaitest;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.web.bind.annotation.RestController;
+import org.nc.springaitest.dto.IELTSEvaluation;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.Map;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.mistralai.MistralAiChatModel;
-import reactor.core.publisher.Flux;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/ai")
@@ -22,21 +18,35 @@ public class ChatController {
         this.chatModel = chatModel;
     }
 
-    @GetMapping("/generate")
-    public ResponseEntity<Map<String, String>> generate(
-            @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+    @PostMapping("/scoreEssay")
+    public ResponseEntity<IELTSEvaluation> scoreEssay(@RequestBody Map<String, String> request) {
         try {
-            String result = this.chatModel.call(message);
-            return ResponseEntity.ok(Map.of("generation", result));
+            String essay = request.getOrDefault("essay", "");
+
+            String prompt = """
+                You are an IELTS examiner. Score the following IELTS Writing Task 2 essay.
+                Provide the scores as integers (0-9) in the following JSON format:
+                {
+                    \"taskResponse\": <int>,
+                    \"coherenceCohesion\": <int>,
+                    \"lexicalResource\": <int>,
+                    \"grammaticalRangeAccuracy\": <int>,
+                    \"overall\": <int>,
+                    \"comment\": \"<short comment about main errors and suggestions to improve>\"
+                }
+
+                Essay:
+                %s
+                """.formatted(essay);
+
+            String result = this.chatModel.call(prompt);
+            IELTSEvaluation evaluation = IELTSEvaluation.fromJson(result);
+            return ResponseEntity.ok(evaluation);
+
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", "Something went wrong: " + e.getMessage()));
+            return ResponseEntity.status(500).build();
         }
     }
-
-    @GetMapping("/generateStream")
-    public Flux<ChatResponse> generateStream(
-            @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
-        var prompt = new Prompt(new UserMessage(message));
-        return this.chatModel.stream(prompt);
-    }
 }
+
+
