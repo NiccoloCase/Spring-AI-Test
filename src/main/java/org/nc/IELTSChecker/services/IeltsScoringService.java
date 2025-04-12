@@ -25,9 +25,6 @@ public class IeltsScoringService {
     private final OpenAiChatModel chatModel;
 
     @Autowired
-    private EvaluationMetrics metrics;
-
-    @Autowired
     private EssayPreprocessor preprocessor;
 
 
@@ -36,11 +33,20 @@ public class IeltsScoringService {
         this.chatModel = chatModel;
     }
 
+    /**
+     * Scores an essay based on the provided request.
+     * @param request the EssayRequest containing the essay and question
+     * @return EvaluationResponse containing the scores and feedback
+     */
     public EvaluationResponse scoreEssay(EssayRequest request) {
+        System.out.println("***************************************************************************************");
+        System.out.println("***************************************************************************************");
+
+
         String cleanedEssay = preprocessor.cleanEssay(request.essay());
         String searchQuery = request.question() + "\n" + cleanedEssay;
 
-        // Retrieve similar essays - fixed SearchRequest creation
+        // RAG
         List<Document> similarEssays = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(searchQuery)
@@ -50,30 +56,32 @@ public class IeltsScoringService {
         );
 
 
-      //  List<Document> similarEssays =new ArrayList<>(0);
 
         System.out.println("Found similar essays: " + similarEssays.size());
-
+        System.out.println("---------------------------------------------------------------------------------------");
 
         // Build prompt
         String prompt = buildScoringPrompt(request, cleanedEssay, similarEssays);
 
         System.out.println("Prompt for AI: " + prompt);
-
-        // Get AI evaluation
+        System.out.println("---------------------------------------------------------------------------------------");
+        // Get Model response
         String aiResponse = chatModel.call(prompt);
 
         System.out.println("AI response: " + aiResponse);
 
         // Parse response
-        EvaluationResponse response = parseAiResponse(aiResponse);
-
-        // Track metrics
-        trackEvaluationMetrics(response);
-
-        return response;
+        return parseAiResponse(aiResponse);
     }
 
+
+    /**
+     * Builds the scoring prompt for the AI model.
+     * @param request the EssayRequest containing the essay and question
+     * @param essay the cleaned essay text
+     * @param examples the list of similar essays for reference (RAG)
+     * @return the constructed prompt string
+     */
     private String buildScoringPrompt(EssayRequest request, String essay, List<Document> examples) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("You are an experienced IELTS examiner. Evaluate this essay based on IELTS Writing Task 2 criteria.\n\n");
@@ -118,7 +126,6 @@ public class IeltsScoringService {
 
     /**
      * Parses the AI response JSON and returns an EvaluationResponse.
-     *
      * @param aiResponse the raw response from the AI model
      * @return an EvaluationResponse with parsed values, or a default error response if parsing fails
      */
@@ -132,9 +139,6 @@ public class IeltsScoringService {
             }
 
             Map<String, Object> responseMap = parseJsonResponse(json);
-
-            // Debug print
-            System.out.println("Parsed response map: " + responseMap);
 
             double taskResponse = getDoubleFromMap(responseMap, "taskResponse", 5.0);
             double coherenceCohesion = getDoubleFromMap(responseMap, "coherenceCohesion", 5.0);
@@ -161,7 +165,7 @@ public class IeltsScoringService {
             );
         } catch (Exception e) {
             return new EvaluationResponse(
-                    5.0, 5.0, 5.0, 5.0, 5.0,
+                    1.0, 1.0, 1.0, 1.0, 1.0,
                     "Could not evaluate properly. " + e.getMessage(),
                     Map.of("general", "Please check your essay format and try again.")
             );
@@ -169,11 +173,10 @@ public class IeltsScoringService {
     }
 
     /**
-     * Uses Jackson's ObjectMapper to convert the given JSON string into a Map.
-     *
+     * Parses the JSON response string into a Map<String, Object>.
      * @param json the JSON string to parse
-     * @return a map containing the parsed key/value pairs
-     * @throws IOException if parsing fails
+     * @return a map with parsed values
+     * @throws IOException
      */
     private Map<String, Object> parseJsonResponse(String json) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -181,12 +184,11 @@ public class IeltsScoringService {
     }
 
     /**
-     * Helper to extract a double value from the given map.
-     *
-     * @param map the data map
-     * @param key the key to look for
-     * @param defaultValue the value to return if the key is missing or malformatted
-     * @return the parsed double or defaultValue
+     * Safely retrieves a double value from the map, with a default value if the key is not found or if parsing fails.
+     * @param map
+     * @param key
+     * @param defaultValue
+     * @return
      */
     private double getDoubleFromMap(Map<String, Object> map, String key, double defaultValue) {
         Object value = map.get(key);
@@ -204,8 +206,7 @@ public class IeltsScoringService {
     }
 
     /**
-     * Safely casts the suggestions object into a Map<String, String>.
-     *
+     * Safely casts the examiner's suggestions object into a Map<String, String>.
      * @param suggestionsRaw the raw object for suggestions
      * @return a map with suggestions; if casting fails, a default map is returned.
      */
@@ -222,18 +223,5 @@ public class IeltsScoringService {
             result.put("general", "Please check your essay format and try again.");
         }
         return result;
-    }
-
-
-    private void trackEvaluationMetrics(EvaluationResponse response) {
-        metrics.trackEvaluation(
-                String.valueOf(response.overallBand()),
-                "taskResponse", response.taskResponse()
-        );
-        metrics.trackEvaluation(
-                String.valueOf(response.overallBand()),
-                "coherenceCohesion", response.coherenceCohesion()
-        );
-
     }
 }

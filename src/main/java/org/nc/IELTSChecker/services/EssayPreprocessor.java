@@ -15,6 +15,11 @@ public class EssayPreprocessor {
             "opinion", "view", "agree", "disagree"
     );
 
+    /**
+     * Cleans the essay by removing extra whitespace and punctuation.
+     * @param essay
+     * @return
+     */
     public String cleanEssay(String essay) {
         if (essay == null) return "";
 
@@ -23,11 +28,21 @@ public class EssayPreprocessor {
         return cleaned.trim();
     }
 
+    /**
+     * Counts the number of words in the essay.
+     * @param text
+     * @return
+     */
     public int countWords(String text) {
         if (text == null || text.isEmpty()) return 0;
         return text.split("\\s+").length;
     }
 
+    /**
+     * Extracts the main topic from the question.
+     * @param question
+     * @return
+     */
     public String extractMainTopic(String question) {
         if (question == null) return "general";
 

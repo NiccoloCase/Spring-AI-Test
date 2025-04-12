@@ -20,8 +20,8 @@ public class CsvIeltsTask2Loader {
     @Value("classpath:/data/ielts_writing_dataset.csv")
     private Resource csvFile;
 
-    private static final int BATCH_SIZE = 500;
-    private static final int DELAY_MS =5000;
+    private static final int BATCH_SIZE = 100;
+    private static final int DELAY_MS = 5000;
 
     @Autowired
     private File vectorStoreFile;
@@ -32,17 +32,18 @@ public class CsvIeltsTask2Loader {
     @Autowired
     private EssayPreprocessor preprocessor;
 
+
+    /**
+     * Loads essays from a CSV file and processes them into a vector store.
+     * @throws Exception If an error occurs during file reading or processing.
+     */
     public void loadCsvEssays() throws Exception {
         List<Document> documents = new ArrayList<>();
-        System.out.println("Starting CSV loading process...");
-
-
-
+        System.out.println("Starting IELTS Dataset loading process...");
 
         if (!csvFile.exists()) {
             throw new IllegalStateException("CSV file not found at: " + csvFile.getURI());
         }
-
         if(isVectorStoreAlreadyLoaded()) {
             System.out.println("Vector store already loaded, skipping CSV processing.");
             return;
@@ -60,7 +61,6 @@ public class CsvIeltsTask2Loader {
             while ((line = reader.readNext()) != null) {
                 lineNumber++;
                 try {
-                    // Validate structure
                     if (line.length < 9) {
                         System.out.printf("Line %d: Skipped - Only %d columns found%n", lineNumber, line.length);
                         skippedCount++;
@@ -110,12 +110,11 @@ public class CsvIeltsTask2Loader {
                     processedCount++;
 
                 } catch (Exception e) {
-                    System.err.printf("❌ Error processing line %d: %s%n", lineNumber, e.getMessage());
+                    System.err.printf("Error processing line %d: %s%n", lineNumber, e.getMessage());
                     System.err.println("Problematic line: " + Arrays.toString(line));
                     skippedCount++;
                 }
             }
-
 
             System.out.printf("Processing Summary:%n");
             System.out.printf(" - Total lines processed: %d%n", lineNumber - 1);
@@ -123,21 +122,12 @@ public class CsvIeltsTask2Loader {
             System.out.printf(" - Skipped lines: %d%n", skippedCount);
 
 
-
-
-            if (documents.isEmpty()) {
-                throw new IllegalStateException("No valid documents processed. Possible reasons:\n" +
-                        "1. CSV format mismatch\n" +
-                        "2. All entries filtered out\n" +
-                        "3. File contains only header row");
-            }
+            if (documents.isEmpty()) throw new IllegalStateException("Error: No valid documents found in the CSV file.");
 
             // Process documents in batches
+            System.out.println("Processing documents in batches...");
             int total = documents.size();
             for (int i = 0; i < total; i += BATCH_SIZE) {
-
-                System.out.printf("Batch number: %d%n", (i / BATCH_SIZE) + 1);
-
                 int end = Math.min(i + BATCH_SIZE, total);
                 List<Document> batch = documents.subList(i, end);
 
@@ -149,19 +139,21 @@ public class CsvIeltsTask2Loader {
 
                 Thread.sleep(DELAY_MS);
             }
-
-
-
         } catch (Exception e) {
             System.err.println("Critical error during CSV processing: " + e.getMessage());
-            e.printStackTrace();
             throw e;
         }
     }
 
-        private String buildDocumentContent(
-                String question, String essay, String examinerComment,
-                String overallScore) {
+    /**
+     * Builds the content string for the essay document.
+     * @param question
+     * @param essay
+     * @param examinerComment
+     * @param overallScore
+     * @return Returns the formatted content string.
+     */
+    private String buildDocumentContent(String question, String essay, String examinerComment, String overallScore) {
 
             StringBuilder contentBuilder = new StringBuilder();
             contentBuilder.append(String.format(
@@ -172,17 +164,19 @@ public class CsvIeltsTask2Loader {
             if (!examinerComment.isEmpty())
                 contentBuilder.append(String.format("Examiner Comments:%n%s%n%n", examinerComment));
 
-
             contentBuilder.append(String.format("Scores:%n- Overall: %s", overallScore));
 
             return contentBuilder.toString();
         }
 
 
+    /**
+     * Saves the vector store to a file.
+     */
     private void saveVectorStore() {
-        if (!(vectorStore instanceof SimpleVectorStore)) {
-            throw new IllegalStateException("Vector store is not SimpleVectorStore instance");
-        }
+        if (!(vectorStore instanceof SimpleVectorStore))
+            throw new IllegalStateException("Vector store is misconfigured. Expected SimpleVectorStore.");
+
 
         try {
             ((SimpleVectorStore) vectorStore).save(vectorStoreFile);
@@ -193,8 +187,11 @@ public class CsvIeltsTask2Loader {
         }
     }
 
+    /**
+     * Checks if the vector store is already loaded.
+     * @return Returns true if the vector store file exists and is not empty.
+     */
     public boolean isVectorStoreAlreadyLoaded() {
         return vectorStoreFile.exists() && vectorStoreFile.length() > 0;
     }
-
 }

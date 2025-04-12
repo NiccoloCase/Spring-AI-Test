@@ -1,6 +1,6 @@
 package org.nc.IELTSChecker.model;
-import org.springframework.ai.document.Document;
 
+import org.springframework.ai.document.Document;
 import java.util.Map;
 
 public class EssayDocument extends Document {

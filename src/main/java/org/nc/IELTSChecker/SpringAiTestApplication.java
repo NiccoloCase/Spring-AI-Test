@@ -18,10 +18,9 @@ public class SpringAiTestApplication {
         return args -> {
             try {
                 csvIeltsTask2Loader.loadCsvEssays();
-                System.out.println("✅ IELTS essay data loaded successfully");
+                System.out.println("IELTS Dataset data loaded successfully");
             } catch (Exception e) {
-                System.err.println("❌ Failed to load IELTS essay data: " + e.getMessage());
-                e.printStackTrace();
+                System.err.println("Failed to load IELTS essay data: " + e.getMessage());
             }
         };
     }
