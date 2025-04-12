@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 public class VectorStoreConfig {
 
     @Value("${vector.store.path:data/vector_store.json}")
+
     private String vectorStorePath;
 
     @Bean
@@ -40,7 +41,7 @@ public class VectorStoreConfig {
 
     private File getVectorStoreFile() {
         File file = Paths.get(vectorStorePath).toAbsolutePath().normalize().toFile();
-        file.getParentFile().mkdirs(); // Ensure directory exists
+        file.getParentFile().mkdirs();
         return file;
     }
 }

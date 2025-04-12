@@ -20,7 +20,7 @@ public class CsvIeltsTask2Loader {
     @Value("classpath:/data/ielts_writing_dataset.csv")
     private Resource csvFile;
 
-    private static final int BATCH_SIZE = 1;
+    private static final int BATCH_SIZE = 500;
     private static final int DELAY_MS =5000;
 
     @Autowired

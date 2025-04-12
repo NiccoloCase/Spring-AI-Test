@@ -4,14 +4,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nc.springaitest.dto.EssayRequest;
 import org.nc.springaitest.dto.EvaluationResponse;
-import org.nc.springaitest.model.EssayDocument;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.mistralai.MistralAiChatModel;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +22,7 @@ public class IeltsScoringService {
     private VectorStore vectorStore;
 
     @Autowired
-    private final MistralAiChatModel chatModel;
+    private final OpenAiChatModel chatModel;
 
     @Autowired
     private EvaluationMetrics metrics;
@@ -34,7 +32,7 @@ public class IeltsScoringService {
 
 
     @Autowired
-    public IeltsScoringService(MistralAiChatModel chatModel) {
+    public IeltsScoringService(OpenAiChatModel chatModel) {
         this.chatModel = chatModel;
     }
 
@@ -50,6 +48,9 @@ public class IeltsScoringService {
                         .similarityThreshold(0.7)
                         .build()
         );
+
+
+      //  List<Document> similarEssays =new ArrayList<>(0);
 
         System.out.println("Found similar essays: " + similarEssays.size());
 
