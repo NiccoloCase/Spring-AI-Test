@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 
 @Configuration
 public class VectorStoreConfig {
-
     @Value("${vector.store.path:data/vector_store.json}")
 
     private String vectorStorePath;
