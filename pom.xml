@@ -46,11 +46,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-simple-vector-store</artifactId>
-        </dependency>
-
 
         <dependency>
             <groupId>com.opencsv</groupId>

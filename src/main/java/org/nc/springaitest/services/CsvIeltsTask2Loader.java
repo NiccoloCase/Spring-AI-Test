@@ -3,7 +3,6 @@ package org.nc.springaitest.services;
 import com.opencsv.CSVReader;
 import org.nc.springaitest.model.EssayDocument;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.retry.NonTransientAiException;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +20,8 @@ public class CsvIeltsTask2Loader {
     @Value("classpath:/data/ielts_writing_dataset.csv")
     private Resource csvFile;
 
-    private static final int BATCH_SIZE = 2;
-    private static final int DELAY_MS = 3000;  // 2 second delay between batches
+    private static final int BATCH_SIZE = 1;
+    private static final int DELAY_MS =5000;
 
     @Autowired
     private File vectorStoreFile;
@@ -37,15 +36,23 @@ public class CsvIeltsTask2Loader {
         List<Document> documents = new ArrayList<>();
         System.out.println("Starting CSV loading process...");
 
+
+
+
         if (!csvFile.exists()) {
             throw new IllegalStateException("CSV file not found at: " + csvFile.getURI());
+        }
+
+        if(isVectorStoreAlreadyLoaded()) {
+            System.out.println("Vector store already loaded, skipping CSV processing.");
+            return;
         }
 
         try (CSVReader reader = new CSVReader(new InputStreamReader(csvFile.getInputStream()))) {
             String[] header = reader.readNext();
             System.out.println("CSV Header: " + Arrays.toString(header));
 
-            int lineNumber = 1; // Track line numbers for error reporting
+            int lineNumber = 1;
             int processedCount = 0;
             int skippedCount = 0;
 
@@ -138,50 +145,10 @@ public class CsvIeltsTask2Loader {
             }
 
             // Process documents in batches
-
-
-
-
-            int total = documents.size();
-            for (int i = 0; i < total; i += BATCH_SIZE) {
-                int end = Math.min(i + BATCH_SIZE, total);
-                List<Document> batch = documents.subList(i, end);
-
-                boolean success = false;
-                int retries = 3;
-
-                while (!success && retries > 0) {
-                    try {
-                        vectorStore.accept(batch);
-                        saveVectorStore();
-                        success = true;
-                        System.out.printf("Processed %d/%d documents (%.1f%%)%n",
-                                end, total, (end * 100.0) / total);
-                    } catch (NonTransientAiException e) {
-                        if (e.getMessage().contains("429")) {
-                            System.out.println("Rate limit hit, retrying...");
-                            Thread.sleep(10000); // Wait 10 seconds
-                            retries--;
-                        } else {
-                            throw e;
-                        }
-                    }
-                }
-
-                if (!success) {
-                    throw new RuntimeException("Failed to process batch after 3 retries");
-                }
-
-                Thread.sleep(DELAY_MS);
-            }
-/*
-
             int total = documents.size();
             for (int i = 0; i < total; i += BATCH_SIZE) {
 
                 System.out.printf("Batch number: %d%n", (i / BATCH_SIZE) + 1);
-
-
 
                 int end = Math.min(i + BATCH_SIZE, total);
                 List<Document> batch = documents.subList(i, end);
@@ -195,7 +162,7 @@ public class CsvIeltsTask2Loader {
                 Thread.sleep(DELAY_MS);
             }
 
- */
+
 
         } catch (Exception e) {
             System.err.println("Critical error during CSV processing: " + e.getMessage());
@@ -236,6 +203,10 @@ public class CsvIeltsTask2Loader {
             System.err.println("Error saving vector store: " + e.getMessage());
             throw new RuntimeException("Vector store persistence failed", e);
         }
+    }
+
+    public boolean isVectorStoreAlreadyLoaded() {
+        return vectorStoreFile.exists() && vectorStoreFile.length() > 0;
     }
 
 }
