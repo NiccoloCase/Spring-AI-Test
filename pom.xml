@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.nc</groupId>
-    <artifactId>SpringAITest</artifactId>
+    <artifactId>IELTSChecker</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>SpringAITest</name>
     <description>SpringAITest</description>
@@ -35,10 +35,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-mistral-ai-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
         </dependency>
+
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
