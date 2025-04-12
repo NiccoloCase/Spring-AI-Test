@@ -123,18 +123,6 @@ public class CsvIeltsTask2Loader {
             System.out.printf(" - Skipped lines: %d%n", skippedCount);
 
 
-            File debugFile = new File("debug_documents.txt");
-            try (var writer = new java.io.PrintWriter(debugFile)) {
-                for (Document doc : documents) {
-                    writer.println(doc.getText());
-                    writer.println("Metadata: " + doc.getMetadata());
-                    writer.println("--------------------------------------------------");
-                }
-                System.out.println("Debug file created: " + debugFile.getAbsolutePath());
-            } catch (Exception e) {
-                System.err.println("Error writing debug file: " + e.getMessage());
-            }
-
 
 
             if (documents.isEmpty()) {
