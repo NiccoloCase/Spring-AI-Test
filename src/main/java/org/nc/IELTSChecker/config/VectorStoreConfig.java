@@ -1,4 +1,4 @@
-package org.nc.springaitest.config;
+package org.nc.IELTSChecker.config;
 
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;

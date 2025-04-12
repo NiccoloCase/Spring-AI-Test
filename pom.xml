@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.nc</groupId>
-    <artifactId>SpringAITest</artifactId>
+    <artifactId>IELTSChecker</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>SpringAITest</name>
     <description>SpringAITest</description>

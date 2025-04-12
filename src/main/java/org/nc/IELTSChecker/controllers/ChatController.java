@@ -1,8 +1,8 @@
-package org.nc.springaitest.controllers;
+package org.nc.IELTSChecker.controllers;
 
-import org.nc.springaitest.dto.EssayRequest;
-import org.nc.springaitest.dto.EvaluationResponse;
-import org.nc.springaitest.services.IeltsScoringService;
+import org.nc.IELTSChecker.dto.EssayRequest;
+import org.nc.IELTSChecker.dto.EvaluationResponse;
+import org.nc.IELTSChecker.services.IeltsScoringService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

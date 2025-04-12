@@ -1,9 +1,9 @@
-package org.nc.springaitest.services;
+package org.nc.IELTSChecker.services;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.nc.springaitest.dto.EssayRequest;
-import org.nc.springaitest.dto.EvaluationResponse;
+import org.nc.IELTSChecker.dto.EssayRequest;
+import org.nc.IELTSChecker.dto.EvaluationResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.vectorstore.SearchRequest;

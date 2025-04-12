@@ -1,7 +1,7 @@
-package org.nc.springaitest.services;
+package org.nc.IELTSChecker.services;
 
 import com.opencsv.CSVReader;
-import org.nc.springaitest.model.EssayDocument;
+import org.nc.IELTSChecker.model.EssayDocument;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;

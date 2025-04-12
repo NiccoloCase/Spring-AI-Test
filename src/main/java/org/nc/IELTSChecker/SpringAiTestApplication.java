@@ -1,6 +1,6 @@
-package org.nc.springaitest;
+package org.nc.IELTSChecker;
 
-import org.nc.springaitest.services.CsvIeltsTask2Loader;
+import org.nc.IELTSChecker.services.CsvIeltsTask2Loader;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

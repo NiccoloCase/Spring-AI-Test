@@ -1,4 +1,4 @@
-package org.nc.springaitest.model;
+package org.nc.IELTSChecker.model;
 import org.springframework.ai.document.Document;
 
 import java.util.Map;

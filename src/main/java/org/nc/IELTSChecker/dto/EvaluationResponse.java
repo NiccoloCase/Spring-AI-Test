@@ -1,4 +1,4 @@
-package org.nc.springaitest.dto;
+package org.nc.IELTSChecker.dto;
 
 import java.util.Map;
 
