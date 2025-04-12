@@ -1,5 +1,7 @@
 package org.nc.springaitest.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nc.springaitest.dto.EssayRequest;
 import org.nc.springaitest.dto.EvaluationResponse;
 import org.nc.springaitest.model.EssayDocument;
@@ -9,6 +11,8 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,11 +51,18 @@ public class IeltsScoringService {
                         .build()
         );
 
+        System.out.println("Found similar essays: " + similarEssays.size());
+
+
         // Build prompt
         String prompt = buildScoringPrompt(request, cleanedEssay, similarEssays);
 
+        System.out.println("Prompt for AI: " + prompt);
+
         // Get AI evaluation
         String aiResponse = chatModel.call(prompt);
+
+        System.out.println("AI response: " + aiResponse);
 
         // Parse response
         EvaluationResponse response = parseAiResponse(aiResponse);
@@ -77,10 +88,8 @@ public class IeltsScoringService {
         if (!examples.isEmpty()) {
             prompt.append("Example Essays for Reference:\n");
             examples.forEach(doc -> {
-                if (doc instanceof EssayDocument essayDoc) {
-                    prompt.append("--- Band ").append(essayDoc.getBandScore())
-                            .append(" Example ---\n")
-                            .append(essayDoc.getContent()).append("\n\n");
+                if (doc != null) {
+                    prompt.append(" Example ---\n").append(doc.getText()).append("\n\n");
                 }
             });
         }
@@ -104,37 +113,116 @@ public class IeltsScoringService {
         return prompt.toString();
     }
 
-    private EvaluationResponse parseAiResponse(String aiResponse) {
+
+
+    /**
+     * Parses the AI response JSON and returns an EvaluationResponse.
+     *
+     * @param aiResponse the raw response from the AI model
+     * @return an EvaluationResponse with parsed values, or a default error response if parsing fails
+     */
+    public EvaluationResponse parseAiResponse(String aiResponse) {
         try {
-            // In a real implementation, you would use proper JSON parsing
-            // This is a simplified version
-            Map<String, Object> responseMap = parseJsonResponse(aiResponse);
+            // Remove any extraneous text before the first '{'
+            String json = aiResponse.trim();
+            int index = json.indexOf("{");
+            if (index > 0) {
+                json = json.substring(index);
+            }
+
+            Map<String, Object> responseMap = parseJsonResponse(json);
+
+            // Debug print
+            System.out.println("Parsed response map: " + responseMap);
+
+            double taskResponse = getDoubleFromMap(responseMap, "taskResponse", 5.0);
+            double coherenceCohesion = getDoubleFromMap(responseMap, "coherenceCohesion", 5.0);
+            double lexicalResource = getDoubleFromMap(responseMap, "lexicalResource", 5.0);
+            double grammaticalRangeAccuracy = getDoubleFromMap(responseMap, "grammaticalRangeAccuracy", 5.0);
+            double overallBand = getDoubleFromMap(responseMap, "overallBand", 5.0);
+
+            // Get examiner feedback or a default string.
+            String examinerFeedback = responseMap.get("examinerFeedback") != null
+                    ? responseMap.get("examinerFeedback").toString()
+                    : "No feedback provided";
+
+            // Cast the suggestions object to Map<String, String>
+            Map<String, String> suggestions = castSuggestions(responseMap.get("suggestions"));
 
             return new EvaluationResponse(
-                    Double.parseDouble(responseMap.get("taskResponse").toString()),
-                    Double.parseDouble(responseMap.get("coherenceCohesion").toString()),
-                    Double.parseDouble(responseMap.get("lexicalResource").toString()),
-                    Double.parseDouble(responseMap.get("grammaticalRangeAccuracy").toString()),
-                    Double.parseDouble(responseMap.get("overallBand").toString()),
-                    responseMap.get("examinerFeedback").toString(),
-                    (Map<String, String>) responseMap.get("suggestions")
+                    taskResponse,
+                    coherenceCohesion,
+                    lexicalResource,
+                    grammaticalRangeAccuracy,
+                    overallBand,
+                    examinerFeedback,
+                    suggestions
             );
         } catch (Exception e) {
-            return new EvaluationResponse(5.0, 5.0, 5.0, 5.0, 5.0,
+            return new EvaluationResponse(
+                    5.0, 5.0, 5.0, 5.0, 5.0,
                     "Could not evaluate properly. " + e.getMessage(),
-                    Map.of(
-                            "general", "Please check your essay format and try again."
-                    )
+                    Map.of("general", "Please check your essay format and try again.")
             );
         }
     }
 
-    private Map<String, Object> parseJsonResponse(String json) {
-        // Simplified parsing - in real app use Jackson/Gson
-        Map<String, Object> map = new HashMap<>();
-        // Implement actual JSON parsing here
-        return map;
+    /**
+     * Uses Jackson's ObjectMapper to convert the given JSON string into a Map.
+     *
+     * @param json the JSON string to parse
+     * @return a map containing the parsed key/value pairs
+     * @throws IOException if parsing fails
+     */
+    private Map<String, Object> parseJsonResponse(String json) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, new TypeReference<Map<String, Object>>() {});
     }
+
+    /**
+     * Helper to extract a double value from the given map.
+     *
+     * @param map the data map
+     * @param key the key to look for
+     * @param defaultValue the value to return if the key is missing or malformatted
+     * @return the parsed double or defaultValue
+     */
+    private double getDoubleFromMap(Map<String, Object> map, String key, double defaultValue) {
+        Object value = map.get(key);
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        } else if (value != null) {
+            try {
+                return Double.parseDouble(value.toString());
+            } catch (NumberFormatException e) {
+                return defaultValue;
+            }
+        } else {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Safely casts the suggestions object into a Map<String, String>.
+     *
+     * @param suggestionsRaw the raw object for suggestions
+     * @return a map with suggestions; if casting fails, a default map is returned.
+     */
+    private Map<String, String> castSuggestions(Object suggestionsRaw) {
+        Map<String, String> result = new HashMap<>();
+        if (suggestionsRaw instanceof Map<?, ?> rawMap) {
+            for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    result.put(entry.getKey().toString(), entry.getValue().toString());
+                }
+            }
+        }
+        if (result.isEmpty()) {
+            result.put("general", "Please check your essay format and try again.");
+        }
+        return result;
+    }
+
 
     private void trackEvaluationMetrics(EvaluationResponse response) {
         metrics.trackEvaluation(

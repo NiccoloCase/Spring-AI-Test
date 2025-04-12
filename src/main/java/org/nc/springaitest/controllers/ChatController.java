@@ -1,52 +1,36 @@
 package org.nc.springaitest.controllers;
-import org.nc.springaitest.dto.IELTSEvaluation;
-import org.springframework.web.bind.annotation.*;
+
+import org.nc.springaitest.dto.EssayRequest;
+import org.nc.springaitest.dto.EvaluationResponse;
+import org.nc.springaitest.services.IeltsScoringService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ai.mistralai.MistralAiChatModel;
-import java.util.Map;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/ai")
 @CrossOrigin
 public class ChatController {
 
-    private final MistralAiChatModel chatModel;
+    private final IeltsScoringService scoringService;
 
     @Autowired
-    public ChatController(MistralAiChatModel chatModel) {
-        this.chatModel = chatModel;
+    public ChatController(IeltsScoringService scoringService) {
+        this.scoringService = scoringService;
     }
 
     @PostMapping("/scoreEssay")
-    public ResponseEntity<IELTSEvaluation> scoreEssay(@RequestBody Map<String, String> request) {
+    public ResponseEntity<EvaluationResponse> scoreEssay(@RequestBody EssayRequest request) {
         try {
-            String essay = request.getOrDefault("essay", "");
+            System.out.println("Received request to score essay: " + request.essay());
+            System.out.println("Received request to score question: " + request.question());
 
-            String prompt = """
-                You are an IELTS examiner. Score the following IELTS Writing Task 2 essay.
-                Provide the scores as integers (0-9) in the following JSON format:
-                {
-                    \"taskResponse\": <int>,
-                    \"coherenceCohesion\": <int>,
-                    \"lexicalResource\": <int>,
-                    \"grammaticalRangeAccuracy\": <int>,
-                    \"overall\": <int>,
-                    \"comment\": \"<short comment about main errors and suggestions to improve>\"
-                }
+            EvaluationResponse evaluation = scoringService.scoreEssay(request);
 
-                Essay:
-                %s
-                """.formatted(essay);
 
-            String result = this.chatModel.call(prompt);
-            IELTSEvaluation evaluation = IELTSEvaluation.fromJson(result);
             return ResponseEntity.ok(evaluation);
-
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }
     }
 }
-
-
