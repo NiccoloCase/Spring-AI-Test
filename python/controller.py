@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 from EssayPreprocessor import EssayPreprocessor
 from IeltsScoringService import IeltsScoringService
+from pathlib import Path
 
 app = FastAPI()
 
@@ -14,7 +15,10 @@ class EssayRequest(BaseModel):
 
 
 preprocessor = EssayPreprocessor()
-service = IeltsScoringService("data/vector_store", preprocessor)
+service = IeltsScoringService(
+    str(Path(__file__).parent / "data/vector_store"),
+    preprocessor
+)
 
 
 @app.post("/ai/scoreEssay")

@@ -15,7 +15,7 @@ class IeltsScoringService:
             print("No FAISS index found. Generating vector store...")
             try:
                 loader = CsvIeltsTask2Loader(
-                    csv_path="data/ielts_writing_dataset.csv",
+                    csv_path= str(Path(__file__).parent / "data/ielts_writing_dataset.csv"),   
                     vector_store_path=vector_store_path,
                     preprocessor=preprocessor
                 )
@@ -87,6 +87,10 @@ class IeltsScoringService:
 
         return self._parse_response(response.content)
 
+
+
+
+   
     def _build_prompt(self, request: dict, essay: str, examples: list[Document]) -> str:
         """
         Constructs the prompt for the language model.
@@ -103,50 +107,59 @@ class IeltsScoringService:
             for doc in examples
         )
 
+        # Handle the reference examples section separately
+        reference_section = ""
+        if examples:
+            reference_section = f"""
+    <referenceExamples>
+    {examples_text}
+    </referenceExamples>
+    """
+
         return f"""
-                    <system>
-                    You are an experienced IELTS examiner. Your job is to evaluate a student's essay following the IELTS Writing Task 2 scoring criteria.
-                    </system>
+    <system>
+    You are an experienced IELTS examiner. Your job is to evaluate a student's essay following the IELTS Writing Task 2 scoring criteria.
+    </system>
 
-                    <question>
-                    {request['question']}
-                    </question>
+    <question>
+    {request['question']}
+    </question>
 
-                    <essay>
-                    {essay}
-                    </essay>
+    <essay>
+    {essay}
+    </essay>
 
-                    <criteria>
-                    - Task Response (TR): Addresses all parts of the task, presents a clear position, supports ideas with relevant examples.
-                    - Coherence & Cohesion (CC): Sequences information logically, uses paragraphing and cohesive devices effectively.
-                    - Lexical Resource (LR): Uses a wide range of vocabulary appropriately, with accurate word choice and collocations.
-                    - Grammatical Range & Accuracy (GRA): Demonstrates a range of grammatical structures with a high level of accuracy.
-                    </criteria>
+    <criteria>
+    - Task Response (TR): Addresses all parts of the task, presents a clear position, supports ideas with relevant examples.
+    - Coherence & Cohesion (CC): Sequences information logically, uses paragraphing and cohesive devices effectively.
+    - Lexical Resource (LR): Uses a wide range of vocabulary appropriately, with accurate word choice and collocations.
+    - Grammatical Range & Accuracy (GRA): Demonstrates a range of grammatical structures with a high level of accuracy.
+    </criteria>
 
-                    {f"<referenceExamples>\n{examples_text}\n</referenceExamples>" if examples else ""}
+    {reference_section}
 
-                    <outputFormat>
-                    Return your evaluation strictly in the following JSON format:
-                    {{
-                    "taskResponse": 0-9,
-                    "coherenceCohesion": 0-9,
-                    "lexicalResource": 0-9,
-                    "grammaticalRangeAccuracy": 0-9,
-                    "overallBand": 0-9,
-                    "examinerFeedback": "string with detailed explanation (min 3 sentences)",
-                    "suggestions": {{
-                        "taskResponse": "brief improvement suggestion",
-                        "coherenceCohesion": "brief improvement suggestion",
-                        "lexicalResource": "brief improvement suggestion",
-                        "grammaticalRangeAccuracy": "brief improvement suggestion"
-                    }}
-                    }}
-                    </outputFormat>
+    <outputFormat>
+    Return your evaluation strictly in the following JSON format:
+    {{
+    "taskResponse": 0-9,
+    "coherenceCohesion": 0-9,
+    "lexicalResource": 0-9,
+    "grammaticalRangeAccuracy": 0-9,
+    "overallBand": 0-9,
+    "examinerFeedback": "string with detailed explanation (min 3 sentences)",
+    "suggestions": {{
+        "taskResponse": "brief improvement suggestion",
+        "coherenceCohesion": "brief improvement suggestion",
+        "lexicalResource": "brief improvement suggestion",
+        "grammaticalRangeAccuracy": "brief improvement suggestion"
+    }}
+    }}
+    </outputFormat>
 
-                    <instructions>
-                    Ensure the output is valid JSON. Do not include explanations outside the JSON. Be fair and objective in your assessment.
-                    </instructions>
-                    """
+    <instructions>
+    Ensure the output is valid JSON. Do not include explanations outside the JSON. Be fair and objective in your assessment.
+    </instructions>
+    """
 
 
 
