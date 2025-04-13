@@ -1,12 +1,22 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
 from EssayPreprocessor import EssayPreprocessor
 from IeltsScoringService import IeltsScoringService
-from pathlib import Path
+
 
 app = FastAPI()
 
+#  CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Your React app's origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class EssayRequest(BaseModel):
     question: str = Field(..., min_length=10, max_length=2000)

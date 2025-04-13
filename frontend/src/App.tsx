@@ -1,41 +1,55 @@
 import { enqueueSnackbar } from "notistack";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-const DEV_SERVER_URL = "http://localhost:30002";
+const DEV_SERVER_URL = "http://localhost:3002";
 
-interface FeedbackItem {
-  score: number;
-  feedback: string;
-}
-
-interface FeedbackResponse {
-  overall_band: number;
-  [key: string]: FeedbackItem | number;
+interface EvaluationResponse {
+  taskResponse: number;
+  coherenceCohesion: number;
+  lexicalResource: number;
+  grammaticalRangeAccuracy: number;
+  overallBand: number;
+  examinerFeedback: string;
+  suggestions: Record<string, string>;
 }
 
 export default function Home() {
   const [essay, setEssay] = useState<string>("");
-  const [feedback, setFeedback] = useState<FeedbackResponse | null>(null);
+  const [question, setQuestion] = useState<string>("");
+  const [feedback, setFeedback] = useState<EvaluationResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!essay.trim()) {
+      enqueueSnackbar("Please enter your essay text", { variant: "warning" });
+      return;
+    }
+
     setLoading(true);
     setFeedback(null);
-    alert("Please wait while we process your essay...");
 
     try {
-      const response = await fetch("DEV_SERVER_URL" + "/ai/scoreEssay", {
+      const body = { essay, question: question, taskType: "2" };
+
+      const response = await fetch(DEV_SERVER_URL + "/ai/scoreEssay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          essay,
-          question: "ciao",
-          taskType: "2",
-        }),
+        body: JSON.stringify(body),
       });
 
-      const data: FeedbackResponse = await response.json();
+      if (!response.ok) {
+        if (response.status === 422) {
+          enqueueSnackbar("Please enter a valid essay text", {
+            variant: "warning",
+          });
+          return;
+        } else
+          throw new Error(`Server responded with status ${response.status}`);
+      }
+
+      const data: EvaluationResponse = await response.json();
       console.log("Feedback data:", data);
 
       setFeedback(data);
@@ -57,12 +71,41 @@ export default function Home() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <textarea
-            className="w-full h-40 p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={essay}
-            onChange={(e) => setEssay(e.target.value)}
-            placeholder="Paste your IELTS essay here..."
-          />
+          <div>
+            <label
+              htmlFor="question"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Question
+            </label>
+            <input
+              id="question"
+              type="text"
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Enter the essay question"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="essay"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Your Essay
+            </label>
+            <textarea
+              id="essay"
+              className="w-full h-40 p-3 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={essay}
+              onChange={(e) => setEssay(e.target.value)}
+              placeholder="Paste your IELTS essay here..."
+              required
+            />
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -101,29 +144,61 @@ export default function Home() {
         {feedback && (
           <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-              📊 Feedback
+              AI Feedback
             </h2>
             <p className="text-lg font-semibold text-gray-900 dark:text-gray-300 mt-2">
-              Overall Band Score: {feedback.overall_band}/9
+              Overall Band Score: {feedback.overallBand}/9
             </p>
-            <div className="mt-3 space-y-2">
-              {Object.entries(feedback).map(
-                ([key, value]) =>
-                  key !== "overall_band" && (
-                    <div
-                      key={key}
-                      className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow"
-                    >
-                      <p className="font-semibold capitalize text-gray-900 dark:text-gray-300">
-                        {key.replace("_", " ")}: {(value as FeedbackItem).score}
-                        /9
-                      </p>
-                      <p className="text-gray-700 dark:text-gray-400">
-                        {(value as FeedbackItem).feedback}
-                      </p>
-                    </div>
-                  )
-              )}
+
+            <div className="mt-4 space-y-3">
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                <p className="font-semibold text-gray-900 dark:text-gray-300">
+                  Examiner Feedback
+                </p>
+                <p className="text-gray-700 dark:text-gray-400 mt-1">
+                  {feedback.examinerFeedback}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                  <p className="font-semibold text-gray-900 dark:text-gray-300">
+                    Task Response: {feedback.taskResponse}/9
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                  <p className="font-semibold text-gray-900 dark:text-gray-300">
+                    Coherence & Cohesion: {feedback.coherenceCohesion}/9
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                  <p className="font-semibold text-gray-900 dark:text-gray-300">
+                    Lexical Resource: {feedback.lexicalResource}/9
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                  <p className="font-semibold text-gray-900 dark:text-gray-300">
+                    Grammatical Range & Accuracy:{" "}
+                    {feedback.grammaticalRangeAccuracy}/9
+                  </p>
+                </div>
+              </div>
+
+              {feedback.suggestions &&
+                Object.keys(feedback.suggestions).length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                    <p className="font-semibold text-gray-900 dark:text-gray-300 mb-2">
+                      Suggestions for Improvement
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-gray-700 dark:text-gray-400">
+                      {Object.entries(feedback.suggestions).map(
+                        ([key, value]) => (
+                          <li key={key}>{value}</li>
+                        )
+                      )}
+                    </ul>
+                  </div>
+                )}
             </div>
           </div>
         )}
