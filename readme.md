@@ -45,7 +45,7 @@ Dataset sourced from Kaggle:
 
 ---
 
-## ⚖️ Comparison Summary
+## Comparison Summary
 
 | Feature              | LangChain (Python)       | Spring AI (Java)            |
 | -------------------- | ------------------------ | --------------------------- |
@@ -58,7 +58,7 @@ Dataset sourced from Kaggle:
 
 ---
 
-## 🚀 Running the Project
+## Running the Project
 
 ### 1. Clone the Repo
 
