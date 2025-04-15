@@ -2,15 +2,6 @@
 
 This repository contains a comparative experiment implementing two Retrieval-Augmented Generation (RAG) systems for automated IELTS essay evaluation, one using **LangChain (Python)** and another using **Spring AI (Java)**. The project includes a frontend built with **React** and **Tailwind CSS**, and serves as a hands-on exploration of LLM integration workflows in both ecosystems.
 
-## Motivation
-
-With the rise of large language models (LLMs), integrating them effectively into production systems is critical. This project investigates the developer experience of the two modern frameworks:
-
-- **LangChain** (Python)
-- **Spring AI** (Java)
-
-The goal is to assess their utility in a practical NLP application: **IELTS Essay Scoring** using Retrieval-Augmented Generation.
-
 ---
 
 ## Tech Stack
@@ -19,7 +10,7 @@ The goal is to assess their utility in a practical NLP application: **IELTS Essa
 
 - **LangChain**
 - FAISS
-- OpenAI
+- OpenAI API
 - FastAPI
 
 ### Backend Java
@@ -35,10 +26,12 @@ The goal is to assess their utility in a practical NLP application: **IELTS Essa
 
 ## Dataset
 
-Dataset sourced from Kaggle: ~1200 IELTS essays annotated with band scores and evaluation criteria.
+Dataset sourced from Kaggle:
 
 - [IELTS Writing Scored Essays Dataset on Kaggle](https://www.kaggle.com/datasets/mazlumi/ielts-writing-scored-essays-dataset)
-- Essays from Task 1 and Task 2
+- 1200 IELTS essays from Task 1 and Task 2 annotated with band scores and examiner feedback
+- Used for similarity-based retrieval
+- A preprocessing was carried out to filter only Task 1, extract the main topic of each essay, and improve the overall text formatting.
 
 ---
 
@@ -99,27 +92,20 @@ npm run dev
 
 ---
 
-## Improvements Needed
+## ⚠️ Improvements Needed
 
-1. **Prompt Engineering**
+This project is intended solely as a development testbed for experimenting with the development lifecycle with LangChain and Spring AI in the context of Retrieval-Augmented Generation (RAG). It is not production-ready. Several improvements are necessary to move towards production-quality product, including:
 
-   - Reduce in-context examples to cut API cost
-   - Standardize example formatting
+1. **Prompt Engineering:**
 
-2. **Hyperparameter Tuning**
+   - Reduce the number of in-context examples (currently five) to lower API usage costs.
+   - Standardize the format of examples to align with the desired JSON output structure. This is currently complicated by the dataset’s lack of per-category evaluation scores.
 
-   - Optimize temperature and top_p for evaluation vs feedback modes
+2. **Hyperparameter Tuning:** Optimize the temperature setting to balance between creativity and consistency in output. Different temperature values can be used for evaluation (which should be deterministic), while human-like feedback can be used for more subjective assessment.
 
-3. **Structured Output**
+3. **Structured Output:** Utilize the structured output features of both Spring AI and LangChain to ensure that model responses strictly conform to the predefined JSON schema.
 
-   - Use JSON schema enforcement features of LangChain/Spring AI
-
-4. **Production Deployment**
-   - Replace SimpleVectorStore with a persistent vector DB (e.g., Pinecone, Weaviate)
-
-## ⚠️ Disclaimer
-
-This is a proof-of-concept for development and evaluation only. Not intended for production use without further optimization.
+4. **Deployment Considerations:** Replace the in-memory vector store used in prototypes with a production-ready, deployed vector database to enable scalable retrieval-augmented generation.
 
 ## Report
 
